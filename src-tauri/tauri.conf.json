@@ -14,7 +14,8 @@
       {
         "title": "DevBrowser",
         "width": 1280,
-        "height": 800
+        "height": 800,
+        "backgroundColor": "#0A0A0A"
       }
     ],
     "security": {
