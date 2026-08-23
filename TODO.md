@@ -40,6 +40,27 @@ COMPLETADO.
   (localhost, 127.x, 192.168.x, 10.x, 172.16-31.x, *.local, sin puntos)
   usan http; dominio con puerto explícito también usa http
 
+### ⏳ Issue #4 — Escaneo periódico de servidores locales (PENDIENTE, plan listo)
+Detectar automáticamente dev servers corriendo en localhost y mostrarlos como
+botones en la página de nueva pestaña. Decisiones ya tomadas:
+- **Escaneo**: puertos comunes (~22: 3000, 3001, 4000, 4200, 5000, 5173,
+  8000, 8080, 8888, 9000, 1420, ...) + caché de los encontrados en el ciclo
+  anterior. Solo handshake TCP (connect_timeout 150ms), sin enviar datos.
+- **UI**: página de inicio (BrowserView cuando no hay URL) con sección
+  "Servidores locales"; clic → navigate al puerto detectado.
+- **Intervalo**: cada 5 s; pausar cuando `document.hidden`.
+Tareas:
+- [ ] `src-tauri/Cargo.toml`: agregar `tokio = { version = "1", features = ["net", "time"] }` (tokio 1.53 ya está transitivo)
+- [ ] `src-tauri/src/lib.rs`: comando async `scan_local_servers(known: Vec<u16>) -> Vec<u16>`
+      con JoinSet (~64 concurrentes), dedup + ordenado; registrar en generate_handler
+- [ ] `src/lib/native.ts`: wrapper `scanLocalServers(known: number[])`
+- [ ] Nuevo hook `src/hooks/useLocalServers.ts`: setInterval 5000ms, caché =
+      resultado anterior, errores silenciados (modo navegador puro)
+- [ ] `src/components/BrowserView.tsx`: sección "Servidores locales" + estado
+      vacío ("Escaneando puertos locales cada 5 s…")
+- [ ] Verificar: cargo check, npm run build; levantar un dev server y ver que
+      el botón aparece en ≤10 s y abre la página
+
 ## Notas técnicas
 - El Webview real se integra por pestaña; cada pestaña conserva su estado al
   cambiar entre ellas (se oculta/muestra en vez de recargar)
