@@ -35,6 +35,10 @@ COMPLETADO.
   invoke mostrados en overlay; errores de red los renderiza WebView2 nativo
 - Botones atrás/adelante/recargar conectados a los webviews
 - Indicador de carga (barra superior) con eventos `page-load`
+- Detección automática de servidores locales en la barra de direcciones:
+  `:3000` / `3000` → `http://localhost:3000`; hosts/IPs locales
+  (localhost, 127.x, 192.168.x, 10.x, 172.16-31.x, *.local, sin puntos)
+  usan http; dominio con puerto explícito también usa http
 
 ## Notas técnicas
 - El Webview real se integra por pestaña; cada pestaña conserva su estado al

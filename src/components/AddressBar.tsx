@@ -69,7 +69,7 @@ function AddressBar() {
           setValue(e.target.value);
           setInvalid(false);
         }}
-        placeholder="Escribe una URL y presiona Enter"
+        placeholder="URL, dominio o puerto local (ej. :3000)"
         spellCheck={false}
         className={`h-8 min-w-0 flex-1 rounded-md bg-neutral-800 px-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-500 focus:ring-2 ${
           invalid ? "ring-2 ring-red-500" : "focus:ring-blue-500"
