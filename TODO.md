@@ -3,7 +3,7 @@
 > Lista para retomar el trabajo. Los issues oficiales están en GitHub:
 > https://github.com/TopitoTobal/DevBrowser/issues
 
-## Estado actual (última sesión: 22-08-2026)
+## Estado actual (última sesión: 23-08-2026)
 
 ### ✅ Issue #1 — Setup inicial con Tauri v2 + React + TypeScript + Tailwind
 COMPLETADO y pusheado (commit `87d8832`).
@@ -23,15 +23,24 @@ COMPLETADO.
 - [x] Conectar todo en `src/App.tsx` con el layout del navegador
 - [x] Verificado con `npm run build`
 
-### ⏳ Issue #3 — Contenedor Webview (PENDIENTE)
-- Carga dinámica de URLs en el Webview nativo de Tauri
-- Protocolo https:// por defecto si el usuario no lo escribe
-- Manejo básico de errores de red
+### ✅ Issue #3 — Contenedor Webview
+COMPLETADO.
+- Webviews nativos por pestaña (Tauri v2 multi-webview con feature `unstable`):
+  crear, navegar, mostrar/ocultar al cambiar de pestaña, cerrar al eliminarla
+  (`src-tauri/src/lib.rs`, comandos `webview_*`)
+- Sincronización de bounds del área de contenido con `ResizeObserver`
+- Protocolo https:// por defecto (`src/lib/url.ts`); validación http/https
+  también en Rust, y bloqueo de esquemas no permitidos vía `on_navigation`
+- Manejo básico de errores: URL inválida marcada en la barra, errores de
+  invoke mostrados en overlay; errores de red los renderiza WebView2 nativo
+- Botones atrás/adelante/recargar conectados a los webviews
+- Indicador de carga (barra superior) con eventos `page-load`
 
 ## Notas técnicas
-- Los cambios de `types.ts` y `TabsContext.tsx` están SIN commitear (WIP)
-- El Webview real se integra en el issue #3; por ahora la URL solo se guarda
-  en estado
+- El Webview real se integra por pestaña; cada pestaña conserva su estado al
+  cambiar entre ellas (se oculta/muestra en vez de recargar)
+- Los webviews remotos no tienen permisos IPC (capabilities solo aplican a la
+  ventana `main`)
 - `Logo.png` está en la raíz; más adelante se puede usar como icono de la app
   con `npx tauri icon Logo.png`
 

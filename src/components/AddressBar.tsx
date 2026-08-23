@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useTabs } from "../context/TabsContext";
 import { normalizeUrl } from "../lib/url";
+import { goBackWebview, goForwardWebview, reloadWebview } from "../lib/native";
 
 const navButton =
   "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-400 enabled:hover:bg-neutral-800 enabled:hover:text-neutral-100 disabled:opacity-40";
@@ -9,13 +10,13 @@ function AddressBar() {
   const { activeTab, navigate } = useTabs();
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState(false);
-  const canNavigate = activeTab !== undefined;
+  const tabId = activeTab?.id;
+  const hasPage = activeTab !== undefined && activeTab.url !== "";
 
   useEffect(() => {
     setValue(activeTab?.url ?? "");
     setInvalid(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab?.id]);
+  }, [tabId]);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -38,7 +39,8 @@ function AddressBar() {
       <button
         type="button"
         aria-label="Atrás"
-        disabled={!canNavigate}
+        disabled={!hasPage}
+        onClick={() => tabId && void goBackWebview(tabId).catch(() => {})}
         className={navButton}
       >
         ←
@@ -46,7 +48,8 @@ function AddressBar() {
       <button
         type="button"
         aria-label="Adelante"
-        disabled={!canNavigate}
+        disabled={!hasPage}
+        onClick={() => tabId && void goForwardWebview(tabId).catch(() => {})}
         className={navButton}
       >
         →
@@ -54,7 +57,8 @@ function AddressBar() {
       <button
         type="button"
         aria-label="Recargar"
-        disabled={!canNavigate || !activeTab?.url}
+        disabled={!hasPage}
+        onClick={() => tabId && void reloadWebview(tabId).catch(() => {})}
         className={navButton}
       >
         ↻
