@@ -3,6 +3,8 @@ import { Tab } from "./types";
 import { TabBar } from "./components/TabBar";
 import { AddressBar } from "./components/AddressBar";
 import { ErrorPage } from "./components/ErrorPage";
+import { InspectorPanel } from "./components/InspectorPanel";
+import { useInspector } from "./hooks/useInspector";
 import {
   activateTab,
   closeTab,
@@ -271,6 +273,10 @@ function App() {
     [activeTabId, closeTabById, navigate]
   );
 
+  const activeHasWebview = webviews.current.has(activeTabId);
+  const { enabled: inspectorOn, inspection, toggle: toggleInspector } =
+    useInspector(activeTabId, activeHasWebview);
+
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-950">
       <TabBar
@@ -286,24 +292,36 @@ function App() {
         onGoBack={handleGoBack}
         onGoForward={handleGoForward}
         onReload={handleReload}
+        onToggleInspector={toggleInspector}
+        inspectorEnabled={inspectorOn}
+        inspectorAvailable={activeHasWebview}
       />
 
-      {/* Native webviews are positioned over this box via sync_layout. */}
-      <div ref={contentRef} className="relative flex-1 bg-neutral-900">
-        {!activeTab?.url && (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <h2 className="text-2xl font-semibold text-neutral-300">DevBrowser</h2>
-            <p className="text-sm text-neutral-500">
-              Escribe una dirección o un término de búsqueda para empezar
-            </p>
-          </div>
-        )}
+      <div className="flex min-h-0 flex-1">
+        {/* Native webviews are positioned over this box via sync_layout. */}
+        <div ref={contentRef} className="relative flex-1 bg-neutral-900">
+          {!activeTab?.url && (
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <h2 className="text-2xl font-semibold text-neutral-300">DevBrowser</h2>
+              <p className="text-sm text-neutral-500">
+                Escribe una dirección o un término de búsqueda para empezar
+              </p>
+            </div>
+          )}
 
-        {activeTab?.loadError && (
-          <ErrorPage
-            url={activeTab.url}
-            message={activeTab.loadError}
-            onRetry={() => retryTab(activeTab.url)}
+          {activeTab?.loadError && (
+            <ErrorPage
+              url={activeTab.url}
+              message={activeTab.loadError}
+              onRetry={() => retryTab(activeTab.url)}
+            />
+          )}
+        </div>
+
+        {inspectorOn && (
+          <InspectorPanel
+            inspection={inspection}
+            onClose={() => toggleInspector()}
           />
         )}
       </div>

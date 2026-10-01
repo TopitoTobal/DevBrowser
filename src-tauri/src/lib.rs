@@ -426,6 +426,46 @@ fn sync_layout(app: AppHandle, x: f64, y: f64, width: f64, height: f64) -> Resul
     Ok(())
 }
 
+/// Injects JavaScript into a tab's webview. Used by the layout inspector to
+/// install its hover probe, and to toggle it back off.
+#[tauri::command]
+fn eval_script(app: AppHandle, tab_id: String, script: String) -> Result<(), String> {
+    let webview = app
+        .get_webview(&tab_id)
+        .ok_or_else(|| format!("La pestaña {tab_id} no tiene webview"))?;
+    webview.eval(script).map_err(|e| e.to_string())
+}
+
+/// Evaluates a script in the tab and resolves with its JSON result. This backs
+/// the inspector's request/response probes, which cannot use events because the
+/// inspected page runs on a different webview than the shell.
+#[tauri::command]
+async fn eval_json(app: AppHandle, tab_id: String, script: String) -> Result<String, String> {
+    let webview = app
+        .get_webview(&tab_id)
+        .ok_or_else(|| format!("La pestaña {tab_id} no tiene webview"))?;
+
+    let (tx, rx) = tokio::sync::oneshot::channel::<String>();
+    // eval_with_callback takes an Fn closure, so the sender needs interior
+    // mutability. The Mutex lets the first callback claim it and ignore repeats.
+    let sender = std::sync::Mutex::new(Some(tx));
+
+    webview
+        .eval_with_callback(script, move |result| {
+            if let Ok(mut guard) = sender.lock() {
+                if let Some(tx) = guard.take() {
+                    let _ = tx.send(result);
+                }
+            }
+        })
+        .map_err(|e| e.to_string())?;
+
+    tokio::time::timeout(std::time::Duration::from_millis(1500), rx)
+        .await
+        .map_err(|_| "El script de inspección no respondió a tiempo".to_string())
+        .and_then(|res| res.map_err(|_| "El script de inspección fue cancelado".to_string()))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -440,6 +480,8 @@ pub fn run() {
             close_tab,
             activate_tab,
             sync_layout,
+            eval_script,
+            eval_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

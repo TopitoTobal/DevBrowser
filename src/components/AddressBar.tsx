@@ -7,6 +7,10 @@ interface AddressBarProps {
   onGoBack: () => void;
   onGoForward: () => void;
   onReload: () => void;
+  onToggleInspector: () => void;
+  inspectorEnabled: boolean;
+  /** Only tabs with a live webview can be inspected. */
+  inspectorAvailable: boolean;
 }
 
 export function AddressBar({
@@ -15,6 +19,9 @@ export function AddressBar({
   onGoBack,
   onGoForward,
   onReload,
+  onToggleInspector,
+  inspectorEnabled,
+  inspectorAvailable,
 }: AddressBarProps) {
   const [inputValue, setInputValue] = useState("");
 
@@ -80,6 +87,30 @@ export function AddressBar({
           />
         </div>
       </form>
+
+      <button
+        onClick={onToggleInspector}
+        disabled={!inspectorAvailable}
+        title={
+          inspectorAvailable
+            ? "Inspector de layout (medir, CSS, contraste)"
+            : "Abre una página para usar el inspector"
+        }
+        className={`rounded-lg p-1.5 transition-colors disabled:opacity-30 disabled:hover:bg-transparent ${
+          inspectorEnabled
+            ? "bg-blue-600/20 text-blue-300 hover:bg-blue-600/30"
+            : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+        }`}
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"
+          />
+        </svg>
+      </button>
     </div>
   );
 }

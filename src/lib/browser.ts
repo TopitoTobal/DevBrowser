@@ -50,6 +50,24 @@ export function syncLayout(bounds: Bounds) {
   return invoke<void>("sync_layout", { ...bounds });
 }
 
+/** Runs JavaScript inside a tab's page. */
+export function evalScript(tabId: string, script: string) {
+  return invoke<void>("eval_script", { tabId, script });
+}
+
+/** Runs JavaScript and resolves with its JSON result. */
+export function evalJson<T>(tabId: string, script: string): Promise<T> {
+  return invoke<string>("eval_json", { tabId, script }).then((raw) => {
+    const trimmed = raw.trim();
+    // eval_with_callback hands back a JSON string, so unwrap the quotes.
+    if (!trimmed || trimmed === "null") return null as T;
+    const parsed = trimmed.startsWith('"')
+      ? JSON.parse(trimmed)
+      : trimmed;
+    return (typeof parsed === "string" ? JSON.parse(parsed) : parsed) as T;
+  });
+}
+
 export function onTabEvent(
   event: string,
   handler: (payload: TabEvent) => void,
