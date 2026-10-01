@@ -315,7 +315,7 @@ async fn create_tab(
             tauri::webview::NewWindowResponse::Deny
         });
 
-    window
+    let webview = window
         .as_ref()
         .window()
         .add_child(
@@ -324,6 +324,11 @@ async fn create_tab(
             LogicalSize::new(width, height),
         )
         .map_err(|e| e.to_string())?;
+
+    // The native widget is laid out over the whole window by GTK, so re-apply
+    // the bounds after creation to keep the shell chrome visible.
+    let _ = webview.set_position(LogicalPosition::new(x, y));
+    let _ = webview.set_size(LogicalSize::new(width, height));
 
     Ok(())
 }

@@ -93,6 +93,10 @@ function App() {
       const bounds = measure() ?? { x: 0, y: 0, width: 0, height: 0 };
       await createTab(tabId, url, bounds);
       webviews.current.add(tabId);
+      // GTK lays the fresh widget out over the whole window, so the bounds
+      // passed to add_child are not enough: re-apply them right after the
+      // webview exists, otherwise it covers the tab bar and address bar.
+      syncLayout(bounds).catch(() => {});
     },
     [measure]
   );
@@ -158,8 +162,10 @@ function App() {
       const tab = tabs.find((t) => t.id === id);
       const show = tab && !tab.loadError && webviews.current.has(id) ? id : null;
       activateTab(show).catch(() => {});
+      // Showing a hidden webview can restore stale bounds, so re-align it.
+      if (show) measure();
     },
-    [tabs]
+    [measure, tabs]
   );
 
   const closeTabById = useCallback(
