@@ -62,6 +62,31 @@ export function scanLocalServers(known: number[]): Promise<number[]> {
   return invoke("scan_local_servers", { known });
 }
 
+export interface LocalCaStatus {
+  supported: boolean;
+  installed: boolean;
+  trusted: boolean;
+  commonName: string;
+  thumbprint: string;
+  caCertPath: string;
+  caCertPemPath: string;
+  leafCertPath: string;
+  leafKeyPath: string;
+  leafHosts: string[];
+}
+
+export function localCaStatus(): Promise<LocalCaStatus> {
+  return invoke("local_ca_status");
+}
+
+export function installLocalCa(): Promise<LocalCaStatus> {
+  return invoke("local_ca_install");
+}
+
+export function removeLocalCa(): Promise<LocalCaStatus> {
+  return invoke("local_ca_remove");
+}
+
 export interface PageLoadPayloadData {
   tabId: string;
   phase: "started" | "finished";

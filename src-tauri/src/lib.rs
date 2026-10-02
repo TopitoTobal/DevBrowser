@@ -1,3 +1,4 @@
+mod certs;
 use std::collections::BTreeSet;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
@@ -194,6 +195,9 @@ pub fn run() {
             webview_go_back,
             webview_go_forward,
             scan_local_servers,
+            certs::local_ca_status,
+            certs::local_ca_install,
+            certs::local_ca_remove,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

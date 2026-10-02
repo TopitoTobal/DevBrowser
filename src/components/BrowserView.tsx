@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTabs } from "../context/TabsContext";
 import { useLocalServers } from "../hooks/useLocalServers";
+import LocalHttpsCard from "./LocalHttpsCard";
 import {
   createWebview,
   hideWebview,
@@ -122,6 +123,7 @@ function BrowserView() {
               </div>
             )}
           </div>
+          <LocalHttpsCard />
         </div>
       )}
       {loading && (
