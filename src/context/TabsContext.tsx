@@ -7,12 +7,12 @@ import {
 } from "react";
 import type { Tab } from "../types";
 
-interface TabsState {
+export interface TabsState {
   tabs: Tab[];
   activeTabId: string;
 }
 
-type TabsAction =
+export type TabsAction =
   | { type: "new-tab" }
   | { type: "close-tab"; id: string }
   | { type: "set-active-tab"; id: string }
@@ -22,12 +22,12 @@ function createTab(): Tab {
   return { id: crypto.randomUUID(), url: "" };
 }
 
-function initialState(): TabsState {
+export function initialState(): TabsState {
   const tab = createTab();
   return { tabs: [tab], activeTabId: tab.id };
 }
 
-function reducer(state: TabsState, action: TabsAction): TabsState {
+export function reducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case "new-tab": {
       const tab = createTab();

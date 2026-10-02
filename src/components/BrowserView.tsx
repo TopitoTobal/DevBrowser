@@ -79,9 +79,7 @@ function BrowserView() {
     if (!element || !activeId || !activeUrl) return;
     const observer = new ResizeObserver(() => {
       if (loadedRef.current.has(activeId)) {
-        void setWebviewBounds(activeId, measureBounds(element)).catch(
-          () => {},
-        );
+        void setWebviewBounds(activeId, measureBounds(element)).catch(() => {});
       }
     });
     observer.observe(element);

@@ -16,7 +16,7 @@ function AddressBar() {
   useEffect(() => {
     setValue(activeTab?.url ?? "");
     setInvalid(false);
-  }, [tabId]);
+  }, [tabId, activeTab?.url]);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();

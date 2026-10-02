@@ -5,6 +5,24 @@
 
 ## Estado actual (última sesión: 23-08-2026)
 
+### ✅ Infraestructura de calidad (tests + lint + formato + CI)
+Sin issue asociado. Añadida para sostener el crecimiento del proyecto.
+- Vitest + Testing Library (jsdom): 24 tests sobre `src/lib/url.ts`
+  (`normalizeUrl`, `urlLabel`) y el reducer de `src/context/TabsContext.tsx`
+  (`npm test`). Se exportaron `reducer`, `initialState` y los tipos
+  `TabsState`/`TabsAction` del contexto para poder testearlos.
+- ESLint 10 (flat config) + typescript-eslint + eslint-plugin-react-hooks:
+  `npm run lint`. Se desactiva `react-hooks/set-state-in-effect` porque
+  AddressBar/BrowserView sincronizan intencionadamente estado local con props
+  dentro de efectos.
+- Prettier 3: `npm run format` / `npm run format:check`. `TODO.md` está en
+  `.prettierignore` (se mantiene a mano).
+- CI (`.github/workflows/ci.yml`): job frontend (lint + format + tests +
+  build) en ubuntu y job backend (cargo clippy `-D warnings`) en windows.
+- Bug corregido: el efecto del AddressBar no tenía `activeTab?.url` en sus
+  dependencias, así que la barra no reflejaba navegaciones externas al tab
+  (p. ej. los botones del issue #4). Ahora sí se sincroniza.
+
 ### ✅ Issue #1 — Setup inicial con Tauri v2 + React + TypeScript + Tailwind
 COMPLETADO y pusheado (commit `87d8832`).
 - Tauri v2 con plantilla React/TypeScript
@@ -82,6 +100,11 @@ npm run dev        # http://localhost:1420
 
 # Verificar que todo compila
 npm run build
+
+# Tests, lint y formato
+npm test
+npm run lint
+npm run format:check
 
 # Compilar ejecutable final
 npm run tauri build
