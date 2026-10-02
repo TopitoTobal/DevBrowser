@@ -22,7 +22,7 @@ jobs:
       - run: npm run build
 
   backend:
-    name: Backend Rust (clippy)
+    name: Backend Rust (clippy + test)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +34,5 @@ jobs:
           workspaces: src-tauri
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --manifest-path src-tauri/Cargo.toml

@@ -1,8 +1,54 @@
+use std::collections::BTreeSet;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::time::Duration;
 use tauri::{
     webview::{PageLoadEvent, WebviewBuilder},
-    AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Url, Window,
-    WebviewUrl,
+    AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Url, WebviewUrl, Window,
 };
+
+/// Puertos donde suelen correr dev servers (Vite, Next, Rails, Django, ...).
+const COMMON_PORTS: &[u16] = &[
+    3000, 3001, 3002, 4000, 4200, 4201, 5000, 5001, 5173, 5174, 8000, 8001, 8080, 8081, 8443, 8888,
+    9000, 9001, 1420, 5175, 1080, 1234, 24678, 3306, 4567,
+];
+
+/// Handshake TCP sin enviar datos: basta con que el puerto acepte la conexión.
+const PROBE_TIMEOUT: Duration = Duration::from_millis(150);
+
+fn candidate_ports(known: &[u16]) -> BTreeSet<u16> {
+    known
+        .iter()
+        .copied()
+        .filter(|port| *port > 0)
+        .chain(COMMON_PORTS.iter().copied())
+        .collect()
+}
+
+#[tauri::command]
+async fn scan_local_servers(known: Vec<u16>) -> Result<Vec<u16>, String> {
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 0);
+    let mut open = Vec::new();
+    let mut set = tokio::task::JoinSet::new();
+
+    for port in candidate_ports(&known) {
+        set.spawn(async move {
+            let target = SocketAddr::new(addr.ip(), port);
+            tokio::time::timeout(PROBE_TIMEOUT, tokio::net::TcpStream::connect(target))
+                .await
+                .is_ok_and(|result| result.is_ok())
+                .then_some(port)
+        });
+    }
+
+    while let Some(joined) = set.join_next().await {
+        if let Ok(Some(port)) = joined {
+            open.push(port);
+        }
+    }
+
+    open.sort_unstable();
+    Ok(open)
+}
 
 fn label_for(tab_id: &str) -> String {
     format!("tab-{tab_id}")
@@ -22,7 +68,9 @@ fn get_webview(app: &AppHandle, tab_id: &str) -> Result<tauri::Webview, String> 
 }
 
 fn eval_in_webview(app: &AppHandle, tab_id: &str, js: &str) -> Result<(), String> {
-    get_webview(app, tab_id)?.eval(js).map_err(|e| e.to_string())
+    get_webview(app, tab_id)?
+        .eval(js)
+        .map_err(|e| e.to_string())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -96,12 +144,16 @@ fn webview_set_bounds(
 
 #[tauri::command]
 fn webview_show(app: AppHandle, tab_id: String) -> Result<(), String> {
-    get_webview(&app, &tab_id)?.show().map_err(|e| e.to_string())
+    get_webview(&app, &tab_id)?
+        .show()
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn webview_hide(app: AppHandle, tab_id: String) -> Result<(), String> {
-    get_webview(&app, &tab_id)?.hide().map_err(|e| e.to_string())
+    get_webview(&app, &tab_id)?
+        .hide()
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -141,7 +193,52 @@ pub fn run() {
             webview_reload,
             webview_go_back,
             webview_go_forward,
+            scan_local_servers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn candidates_merge_known_and_common_ports_without_duplicates() {
+        let candidates = candidate_ports(&[5173, 9999]);
+        assert!(candidates.contains(&5173));
+        assert!(candidates.contains(&9999));
+        assert!(candidates.contains(&3000));
+        assert_eq!(
+            candidates.len(),
+            candidates
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+        );
+    }
+
+    #[test]
+    fn candidates_drop_out_of_range_known_ports() {
+        assert!(!candidate_ports(&[0]).contains(&0));
+    }
+
+    #[test]
+    fn scan_detects_a_listening_port() {
+        tauri::async_runtime::block_on(async {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                .await
+                .expect("bind");
+            let port = listener.local_addr().expect("addr").port();
+            let found = scan_local_servers(vec![port]).await.expect("scan");
+            assert!(
+                found.contains(&port),
+                "no se detectó el puerto {port}: {found:?}"
+            );
+            assert!(
+                found.windows(2).all(|w| w[0] < w[1]),
+                "sin ordenar: {found:?}"
+            );
+        });
+    }
 }

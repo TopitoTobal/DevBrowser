@@ -7,7 +7,7 @@ import prettier from "eslint-config-prettier";
 // Nota: `react-hooks/set-state-in-effect` se desactiva porque AddressBar y
 // BrowserView sincronizan intencionadamente estado local con props de forma
 // síncrona dentro de efectos (patrón "adjust state when a prop changes").
-// Ver TODO.md: el efecto de AddressBar con deps incompletas es un bug conocido.
+// Ver la sección de infraestructura de calidad en TODO.md.
 export default tseslint.config(
   { ignores: ["dist", "src-tauri", "node_modules"] },
   {

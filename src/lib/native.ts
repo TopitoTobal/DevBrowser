@@ -58,6 +58,10 @@ export function goForwardWebview(tabId: string): Promise<void> {
   return invoke("webview_go_forward", { tabId });
 }
 
+export function scanLocalServers(known: number[]): Promise<number[]> {
+  return invoke("scan_local_servers", { known });
+}
+
 export interface PageLoadPayloadData {
   tabId: string;
   phase: "started" | "finished";

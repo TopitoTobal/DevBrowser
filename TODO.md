@@ -3,7 +3,9 @@
 > Lista para retomar el trabajo. Los issues oficiales están en GitHub:
 > https://github.com/TopitoTobal/DevBrowser/issues
 
-## Estado actual (última sesión: 23-08-2026)
+## Estado actual (última sesión: 02-10-2026)
+
+Issues #1 a #4 completados.
 
 ### ✅ Infraestructura de calidad (tests + lint + formato + CI)
 Sin issue asociado. Añadida para sostener el crecimiento del proyecto.
@@ -58,26 +60,23 @@ COMPLETADO.
   (localhost, 127.x, 192.168.x, 10.x, 172.16-31.x, *.local, sin puntos)
   usan http; dominio con puerto explícito también usa http
 
-### ⏳ Issue #4 — Escaneo periódico de servidores locales (PENDIENTE, plan listo)
-Detectar automáticamente dev servers corriendo en localhost y mostrarlos como
-botones en la página de nueva pestaña. Decisiones ya tomadas:
-- **Escaneo**: puertos comunes (~22: 3000, 3001, 4000, 4200, 5000, 5173,
-  8000, 8080, 8888, 9000, 1420, ...) + caché de los encontrados en el ciclo
-  anterior. Solo handshake TCP (connect_timeout 150ms), sin enviar datos.
-- **UI**: página de inicio (BrowserView cuando no hay URL) con sección
-  "Servidores locales"; clic → navigate al puerto detectado.
-- **Intervalo**: cada 5 s; pausar cuando `document.hidden`.
-Tareas:
-- [ ] `src-tauri/Cargo.toml`: agregar `tokio = { version = "1", features = ["net", "time"] }` (tokio 1.53 ya está transitivo)
-- [ ] `src-tauri/src/lib.rs`: comando async `scan_local_servers(known: Vec<u16>) -> Vec<u16>`
-      con JoinSet (~64 concurrentes), dedup + ordenado; registrar en generate_handler
-- [ ] `src/lib/native.ts`: wrapper `scanLocalServers(known: number[])`
-- [ ] Nuevo hook `src/hooks/useLocalServers.ts`: setInterval 5000ms, caché =
-      resultado anterior, errores silenciados (modo navegador puro)
-- [ ] `src/components/BrowserView.tsx`: sección "Servidores locales" + estado
-      vacío ("Escaneando puertos locales cada 5 s…")
-- [ ] Verificar: cargo check, npm run build; levantar un dev server y ver que
-      el botón aparece en ≤10 s y abre la página
+### ✅ Issue #4 — Escaneo periódico de servidores locales
+COMPLETADO.
+- `src-tauri/src/lib.rs`: comando async `scan_local_servers(known: Vec<u16>)`,
+  handshake TCP a 127.0.0.1 con `tokio::time::timeout(150ms)` y `JoinSet`
+  (26 puertos comunes + los conocidos del ciclo anterior), dedup y ordenado
+- `src-tauri/Cargo.toml`: `tokio = { version = "1", features = ["net", "time"] }`
+  (1.53 ya era transitivo de Tauri, no suma tiempo de compilación)
+- `src/lib/native.ts`: wrapper `scanLocalServers(known)`
+- `src/hooks/useLocalServers.ts`: escaneo cada 5 s, cache = resultado anterior,
+  pausa con `document.hidden`, reanuda y refresca en `visibilitychange`, ignora
+  errores (modo navegador sin bridge de Tauri) y evita `setState` si no cambió
+- `src/components/BrowserView.tsx`: sección "Servidores locales" en la página
+  de nueva pestaña; clic → `navigate` a `http://localhost:<puerto>`. El escaneo
+  solo corre mientras la página de inicio está visible
+- Tests: 3 en Rust (`cargo test`, incluido en CI) que verifican la fusión de
+  puertos, el descarte de puertos inválidos y que el handshake detecta un puerto
+  real con listener; 24 en frontend
 
 ## Notas técnicas
 - El Webview real se integra por pestaña; cada pestaña conserva su estado al
@@ -105,6 +104,13 @@ npm run build
 npm test
 npm run lint
 npm run format:check
+
+# Tests y lint del backend Rust
+cd src-tauri
+cargo test
+cargo clippy --all-targets -- -D warnings
+cargo fmt
+cd ..
 
 # Compilar ejecutable final
 npm run tauri build

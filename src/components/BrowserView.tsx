@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTabs } from "../context/TabsContext";
+import { useLocalServers } from "../hooks/useLocalServers";
 import {
   createWebview,
   hideWebview,
@@ -12,13 +13,14 @@ import {
 } from "../lib/native";
 
 function BrowserView() {
-  const { tabs, activeTab } = useTabs();
+  const { tabs, activeTab, navigate } = useTabs();
   const containerRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(new Map<string, string>());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeId = activeTab?.id;
   const activeUrl = activeTab?.url;
+  const localServers = useLocalServers(!activeUrl);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -89,11 +91,37 @@ function BrowserView() {
   return (
     <div ref={containerRef} className="relative min-h-0 flex-1 bg-white">
       {!activeUrl && (
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-neutral-950 text-neutral-500">
-          <h1 className="text-4xl font-bold tracking-tight">DevBrowser</h1>
-          <p className="text-sm">
-            Escribe una URL en la barra de direcciones para navegar
-          </p>
+        <div className="flex h-full flex-col items-center justify-center gap-8 bg-neutral-950 text-neutral-500">
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-4xl font-bold tracking-tight">DevBrowser</h1>
+            <p className="text-sm">
+              Escribe una URL en la barra de direcciones para navegar
+            </p>
+          </div>
+          <div className="flex max-w-2xl flex-col items-center gap-3 px-4">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-600">
+              Servidores locales
+            </h2>
+            {localServers.length === 0 ? (
+              <p className="text-sm">Escaneando puertos locales cada 5 s…</p>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-2">
+                {localServers.map((port) => (
+                  <button
+                    key={port}
+                    type="button"
+                    onClick={() => {
+                      if (activeId)
+                        navigate(activeId, `http://localhost:${port}`);
+                    }}
+                    className="rounded-full border border-neutral-800 bg-neutral-900 px-4 py-1.5 font-mono text-sm text-neutral-200 transition-colors hover:border-blue-700 hover:bg-neutral-800 hover:text-white"
+                  >
+                    localhost:{port}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
       {loading && (
